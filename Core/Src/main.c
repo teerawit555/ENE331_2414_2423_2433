@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-unsigned int count;
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -36,6 +36,91 @@ unsigned int count;
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+uint32_t lastTime_1;
+uint32_t Settime_1 = 60; // กำหนดเวลาในการกระพริบ PA6 ทุกๆ 60 ticks (1.2 ms) , จากการคำนวณในรูป
+uint32_t lastTime_2;
+uint32_t Settime_2 = 1500;  // กำหนดเวลาในการอ่านค่าปุ่มทุกๆ 1500 ticks (20 ms)
+
+uint32_t counter = 0; // นับเวลาโดยใช้ Timer
+
+uint8_t state = 0;
+uint8_t LUT[4] = {
+	    0b001,  // State 0 → PA1 ON
+	    0b010,  // State 1 → PA2 ON
+	    0b100,  // State 2 → PA3 ON
+	    0b111   // State 3 → All ON
+};
+
+
+void GPIOA_Config(void) {
+	// Enable GPIOA Clock (if not already done)
+	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+
+	// PA1–PA3: Set as general-purpose output
+	GPIOA->MODER &= ~((0x3 << (1 * 2)) | (0x3 << (2 * 2)) | (0x3 << (3 * 2)));
+	GPIOA->MODER |=  ((0x1 << (1 * 2)) | (0x1 << (2 * 2)) | (0x1 << (3 * 2))); // '01' = output
+
+	// PA6
+	GPIOA->MODER &= ~(0x3 << (6 * 2));  // Clear MODER6
+	GPIOA->MODER |=  (0x2 << (6 * 2));  // '10'
+
+	// Set ให้ output type ให้เป็น push-pull สำหรับ PA1, PA2, PA3, PA6
+	GPIOA->OTYPER &= ~((1 << 1) | (1 << 2) | (1 << 3) | (1 << 6));
+
+	// Set ให้ PA1, PA2, PA3, PA6 ให้ไม่มี pull-up หรือ pull-down
+	GPIOA->PUPDR &= ~((0x3 << (1 * 2)) | (0x3 << (2 * 2)) | (0x3 << (3 * 2)) | (0x3 << (6 * 2)));
+
+	// PA6 bits 27:24
+	GPIOA->AFR[0] &= ~(0xF << (6 * 4));
+	GPIOA->AFR[0] |=  (0x1 << (6 * 4));  // AF1
+}
+unsigned char Read_PA0(void) {
+	return (GPIOA->IDR & (1 << 0)) ? 1 : 0; // ถ้า PA0 = 1(กด) คืนค่า 1, ถ้า PA0 = 0 คืนค่า 0
+}
+
+void GPIOB_Config(void) {
+    // Enable GPIOB clock
+    RCC->AHB1ENR |= (1 << 1);
+
+    // MODER10 = B10
+    GPIOB->MODER &= ~(0x3 << 20);  // Clear bits สำหรับ 21:20
+    GPIOB->MODER |=  (0x2 << 20);  // Set bits 21:20 to 10
+
+    // Set Alternate Function AF1 for TIM2_CH3 on PB10
+    GPIOB->AFR[1] &= ~(0xF << 8);  // Clear bits สำหรับ PB10
+    GPIOB->AFR[1] |=  (0x1 << 8);  // TIM2_CH3
+
+    // Set push-pull and no pull-up/down
+    GPIOB->OTYPER &= ~(1 << 10);    // Push-pull
+    GPIOB->PUPDR  &= ~(0x3 << 20);  // No pull
+}
+
+
+
+void GPIO_Toggle_Config(void) {
+    // Enable GPIOA Clock
+    RCC -> AHB1ENR |= (0x01 << 0);  // Enable GPIOA clock
+
+    // Set PA6 as output
+    GPIOA -> MODER &= ~(0x03 << (6 * 2));  // Clear MODER6
+    GPIOA -> MODER |= (0x01 << (6 * 2));   // Set PA6 as output ('01')
+
+    // Set output type
+    GPIOA -> OTYPER &= ~(0x01 << 6);  // set PA6 เป็น push-pull
+
+    // Set GPIO Speed (optional)
+    GPIOA -> OSPEEDR &= ~(0x03 << (6 * 2));  // set PA6 เป็นความเร็วต่ำ (default)
+
+    // Disable pull-up/pull-down
+    GPIOA -> PUPDR &= ~(0x03 << (6 * 2));   // ไม่มี pull-up หรือ pull-down สำหรับ PA6
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
+	if(htim -> Instance == TIM2) {
+		counter++;
+	}
+}
+
 
 /* USER CODE END PM */
 
@@ -43,11 +128,7 @@ unsigned int count;
 TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
-void GPIOB_Config(void) {
-	RCC -> AHB1ENR |= (0x01 << 1);
-	GPIOB -> MODER &= ~(0x03 << (1 * 2));
-	GPIOB -> PUPDR |= (0x01 << (1 * 2));
-}
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -81,6 +162,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -94,27 +176,52 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+  HAL_TIM_Base_Start(&htim2);
+  GPIOA_Config();
+  GPIOB_Config();
+  GPIO_Toggle_Config();
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
-  HAL_TIM_Base_Start(&htim2);
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-	  if(__HAL_TIM_GET_FLAG(&htim2, TIM_FLAG_UPDATE) == SET){
-	  		  __HAL_TIM_CLEAR_FLAG(&htim2,TIM_FLAG_UPDATE);
 
-	  		  count++;
-	  		  if(count==200000){
-	  			  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-	  			  count++;
-	  			  count = 0;
-	  		  }
-	  	  }
-//	  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-//	  HAL_Delay(1000);
+
+	     // 20 us base time from TIM2
+	     if (__HAL_TIM_GET_FLAG(&htim2, TIM_FLAG_UPDATE) == SET) {
+	         __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
+	         counter++;
+	     }
+	        // ให้ PA6 กระพิบทุกๆ 1.2 ms
+  	        if((counter - lastTime_1) >= Settime_1) {
+	            // Your program task
+	        	GPIOA-> ODR ^= (1 << 6); // Toggle PA6
+	        	for(uint32_t i=0; i<=60000; i++) { // รอเวลาให้กระพริบ
+	        		__NOP();
+	        	}
+	            lastTime_1 = counter; // update
+		    }
+
+	        // อ่านค่า PA0 และเปลี่ยน state ใน LUT
+	        if((counter - lastTime_2) >= Settime_2) {
+	            // Your program task
+	        	 if ((Read_PA0() == 0 )) {
+	        		// On falling edge (button press)
+	        		GPIOA->ODR &= ~(0x0E);               // Clear ค่า PA1–PA3
+	        		GPIOA->ODR |= (LUT[state] << 1);     // Update LED
+
+	        		state += 1;
+
+	        		if (state == 4){ // ถ้าเกิน state 3 reset ไป 0 ใหม่
+	        			state = 0;}
+	        		     	             }
+	            lastTime_2 = counter; // update
+		    }
+
+    /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -137,14 +244,10 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 12;
-  RCC_OscInitStruct.PLL.PLLN = 72;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 4;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -154,12 +257,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
     Error_Handler();
   }
@@ -218,39 +321,35 @@ static void MX_TIM2_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
-
-  /* USER CODE END MX_GPIO_Init_1 */
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 
-  /*Configure GPIO pin : PC13 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  /*Configure GPIO pin : PA0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA6 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  /*Configure GPIO pins : PA1 PA2 PA3 PA6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_6;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-
-  /* USER CODE END MX_GPIO_Init_2 */
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
