@@ -36,9 +36,10 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-uint32_t lastTime_1;
+uint32_t Time_1;
 uint32_t Settime_1 = 60; // กำหนดเวลาในการกระพริบ PA6 ทุกๆ 60 ticks (1.2 ms) , จากการคำนวณในรูป
-uint32_t lastTime_2;
+
+uint32_t Time_2;
 uint32_t Settime_2 = 1500;  // กำหนดเวลาในการอ่านค่าปุ่มทุกๆ 1500 ticks (20 ms)
 
 uint32_t counter = 0; // นับเวลาโดยใช้ Timer
@@ -195,17 +196,17 @@ int main(void)
 	         counter++;
 	     }
 	        // ให้ PA6 กระพิบทุกๆ 1.2 ms
-  	        if((counter - lastTime_1) >= Settime_1) {
+  	        if((counter - Time_1) >= Settime_1) {
 	            // Your program task
 	        	GPIOA-> ODR ^= (1 << 6); // Toggle PA6
 	        	for(uint32_t i=0; i<=60000; i++) { // รอเวลาให้กระพริบ
 	        		__NOP();
 	        	}
-	            lastTime_1 = counter; // update
+	            Time_1 = counter; // update
 		    }
 
 	        // อ่านค่า PA0 และเปลี่ยน state ใน LUT
-	        if((counter - lastTime_2) >= Settime_2) {
+	        if((counter - Time_2) >= Settime_2) {
 	            // Your program task
 	        	 if ((Read_PA0() == 0 )) {
 	        		// On falling edge (button press)
@@ -217,7 +218,7 @@ int main(void)
 	        		if (state == 4){ // ถ้าเกิน state 3 reset ไป 0 ใหม่
 	        			state = 0;}
 	        		     	             }
-	            lastTime_2 = counter; // update
+	            Time_2 = counter; // update
 		    }
 
     /* USER CODE END WHILE */

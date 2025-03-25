@@ -39,13 +39,13 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  17 .debug_line   0000a06e  00000000  00000000  0002444c  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    00087e80  00000000  00000000  0002e4ba  2**0
+ 18 .debug_str    00087e78  00000000  00000000  0002e4ba  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000043  00000000  00000000  000b633a  2**0
+ 19 .comment      00000043  00000000  00000000  000b6332  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  000027d0  00000000  00000000  000b6380  2**2
+ 20 .debug_frame  000027d0  00000000  00000000  000b6378  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 0000006d  00000000  00000000  000b8b50  2**0
+ 21 .debug_line_str 0000006d  00000000  00000000  000b8b48  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -400,21 +400,21 @@ void GPIOA_Config(void) {
  8000526:	f043 0354 	orr.w	r3, r3, #84	@ 0x54
  800052a:	6013      	str	r3, [r2, #0]
 
-	// PA6: Set as alternate function (Timer2 CH1)
+	// PA6
 	GPIOA->MODER &= ~(0x3 << (6 * 2));  // Clear MODER6
  800052c:	4b16      	ldr	r3, [pc, #88]	@ (8000588 <GPIOA_Config+0x84>)
  800052e:	681b      	ldr	r3, [r3, #0]
  8000530:	4a15      	ldr	r2, [pc, #84]	@ (8000588 <GPIOA_Config+0x84>)
  8000532:	f423 5340 	bic.w	r3, r3, #12288	@ 0x3000
  8000536:	6013      	str	r3, [r2, #0]
-	GPIOA->MODER |=  (0x2 << (6 * 2));  // '10' = alternate function
+	GPIOA->MODER |=  (0x2 << (6 * 2));  // '10'
  8000538:	4b13      	ldr	r3, [pc, #76]	@ (8000588 <GPIOA_Config+0x84>)
  800053a:	681b      	ldr	r3, [r3, #0]
  800053c:	4a12      	ldr	r2, [pc, #72]	@ (8000588 <GPIOA_Config+0x84>)
  800053e:	f443 5300 	orr.w	r3, r3, #8192	@ 0x2000
  8000542:	6013      	str	r3, [r2, #0]
 
-	// OTYPER: All push-pull
+	// Set ให้ output type ให้เป็น push-pull สำหรับ PA1, PA2, PA3, PA6
 	GPIOA->OTYPER &= ~((1 << 1) | (1 << 2) | (1 << 3) | (1 << 6));
  8000544:	4b10      	ldr	r3, [pc, #64]	@ (8000588 <GPIOA_Config+0x84>)
  8000546:	685b      	ldr	r3, [r3, #4]
@@ -422,7 +422,7 @@ void GPIOA_Config(void) {
  800054a:	f023 034e 	bic.w	r3, r3, #78	@ 0x4e
  800054e:	6053      	str	r3, [r2, #4]
 
-	// No pull-up/pull-down
+	// Set ให้ PA1, PA2, PA3, PA6 ให้ไม่มี pull-up หรือ pull-down
 	GPIOA->PUPDR &= ~((0x3 << (1 * 2)) | (0x3 << (2 * 2)) | (0x3 << (3 * 2)) | (0x3 << (6 * 2)));
  8000550:	4b0d      	ldr	r3, [pc, #52]	@ (8000588 <GPIOA_Config+0x84>)
  8000552:	68db      	ldr	r3, [r3, #12]
@@ -431,8 +431,7 @@ void GPIOA_Config(void) {
  800055a:	f023 033c 	bic.w	r3, r3, #60	@ 0x3c
  800055e:	60d3      	str	r3, [r2, #12]
 
-	// Set alternate function for PA6 → AF1 = TIM2_CH1
-	// PA6 = AFRL[6] = bits 27:24
+	// PA6 bits 27:24
 	GPIOA->AFR[0] &= ~(0xF << (6 * 4));
  8000560:	4b09      	ldr	r3, [pc, #36]	@ (8000588 <GPIOA_Config+0x84>)
  8000562:	6a1b      	ldr	r3, [r3, #32]
@@ -458,7 +457,7 @@ void GPIOA_Config(void) {
 unsigned char Read_PA0(void) {
  800058c:	b480      	push	{r7}
  800058e:	af00      	add	r7, sp, #0
-	return (GPIOA->IDR & (1 << 0)) ? 1 : 0;
+	return (GPIOA->IDR & (1 << 0)) ? 1 : 0; // ถ้า PA0 = 1(กด) คืนค่า 1, ถ้า PA0 = 0 คืนค่า 0
  8000590:	4b06      	ldr	r3, [pc, #24]	@ (80005ac <Read_PA0+0x20>)
  8000592:	691b      	ldr	r3, [r3, #16]
  8000594:	f003 0301 	and.w	r3, r3, #1
@@ -487,14 +486,14 @@ void GPIOB_Config(void) {
  80005ba:	f043 0302 	orr.w	r3, r3, #2
  80005be:	6313      	str	r3, [r2, #48]	@ 0x30
 
-    // Set PB10 to Alternate Function Mode (MODER10 = b10)
-    GPIOB->MODER &= ~(0x3 << 20);  // Clear bits 21:20
+    // MODER10 = B10
+    GPIOB->MODER &= ~(0x3 << 20);  // Clear bits สำหรับ 21:20
  80005c0:	4b15      	ldr	r3, [pc, #84]	@ (8000618 <GPIOB_Config+0x68>)
  80005c2:	681b      	ldr	r3, [r3, #0]
  80005c4:	4a14      	ldr	r2, [pc, #80]	@ (8000618 <GPIOB_Config+0x68>)
  80005c6:	f423 1340 	bic.w	r3, r3, #3145728	@ 0x300000
  80005ca:	6013      	str	r3, [r2, #0]
-    GPIOB->MODER |=  (0x2 << 20);  // Set bits 21:20 to 10 (AF mode)
+    GPIOB->MODER |=  (0x2 << 20);  // Set bits 21:20 to 10
  80005cc:	4b12      	ldr	r3, [pc, #72]	@ (8000618 <GPIOB_Config+0x68>)
  80005ce:	681b      	ldr	r3, [r3, #0]
  80005d0:	4a11      	ldr	r2, [pc, #68]	@ (8000618 <GPIOB_Config+0x68>)
@@ -502,21 +501,20 @@ void GPIOB_Config(void) {
  80005d6:	6013      	str	r3, [r2, #0]
 
     // Set Alternate Function AF1 for TIM2_CH3 on PB10
-    // AFR[1] is used for PB8–PB15 → PB10 = AFR[1] bits 11:8
-    GPIOB->AFR[1] &= ~(0xF << 8);  // Clear bits for PB10
+    GPIOB->AFR[1] &= ~(0xF << 8);  // Clear bits สำหรับ PB10
  80005d8:	4b0f      	ldr	r3, [pc, #60]	@ (8000618 <GPIOB_Config+0x68>)
  80005da:	6a5b      	ldr	r3, [r3, #36]	@ 0x24
  80005dc:	4a0e      	ldr	r2, [pc, #56]	@ (8000618 <GPIOB_Config+0x68>)
  80005de:	f423 6370 	bic.w	r3, r3, #3840	@ 0xf00
  80005e2:	6253      	str	r3, [r2, #36]	@ 0x24
-    GPIOB->AFR[1] |=  (0x1 << 8);  // AF1 = TIM2_CH3
+    GPIOB->AFR[1] |=  (0x1 << 8);  // TIM2_CH3
  80005e4:	4b0c      	ldr	r3, [pc, #48]	@ (8000618 <GPIOB_Config+0x68>)
  80005e6:	6a5b      	ldr	r3, [r3, #36]	@ 0x24
  80005e8:	4a0b      	ldr	r2, [pc, #44]	@ (8000618 <GPIOB_Config+0x68>)
  80005ea:	f443 7380 	orr.w	r3, r3, #256	@ 0x100
  80005ee:	6253      	str	r3, [r2, #36]	@ 0x24
 
-    // Optional: Set push-pull and no pull-up/down
+    // Set push-pull and no pull-up/down
     GPIOB->OTYPER &= ~(1 << 10);    // Push-pull
  80005f0:	4b09      	ldr	r3, [pc, #36]	@ (8000618 <GPIOB_Config+0x68>)
  80005f2:	685b      	ldr	r3, [r3, #4]
@@ -568,7 +566,7 @@ void GPIO_Toggle_Config(void) {
  8000642:	6013      	str	r3, [r2, #0]
 
     // Set output type
-    GPIOA -> OTYPER &= ~(0x01 << 6);  // Push-pull for PA6
+    GPIOA -> OTYPER &= ~(0x01 << 6);  // set PA6 เป็น push-pull
  8000644:	4b0c      	ldr	r3, [pc, #48]	@ (8000678 <GPIO_Toggle_Config+0x5c>)
  8000646:	685b      	ldr	r3, [r3, #4]
  8000648:	4a0b      	ldr	r2, [pc, #44]	@ (8000678 <GPIO_Toggle_Config+0x5c>)
@@ -576,7 +574,7 @@ void GPIO_Toggle_Config(void) {
  800064e:	6053      	str	r3, [r2, #4]
 
     // Set GPIO Speed (optional)
-    GPIOA -> OSPEEDR &= ~(0x03 << (6 * 2));  // Low speed for PA6 (default)
+    GPIOA -> OSPEEDR &= ~(0x03 << (6 * 2));  // set PA6 เป็นความเร็วต่ำ (default)
  8000650:	4b09      	ldr	r3, [pc, #36]	@ (8000678 <GPIO_Toggle_Config+0x5c>)
  8000652:	689b      	ldr	r3, [r3, #8]
  8000654:	4a08      	ldr	r2, [pc, #32]	@ (8000678 <GPIO_Toggle_Config+0x5c>)
@@ -584,7 +582,7 @@ void GPIO_Toggle_Config(void) {
  800065a:	6093      	str	r3, [r2, #8]
 
     // Disable pull-up/pull-down
-    GPIOA -> PUPDR &= ~(0x03 << (6 * 2));   // No pull-up/pull-down for PA6
+    GPIOA -> PUPDR &= ~(0x03 << (6 * 2));   // ไม่มี pull-up หรือ pull-down สำหรับ PA6
  800065c:	4b06      	ldr	r3, [pc, #24]	@ (8000678 <GPIO_Toggle_Config+0x5c>)
  800065e:	68db      	ldr	r3, [r3, #12]
  8000660:	4a05      	ldr	r2, [pc, #20]	@ (8000678 <GPIO_Toggle_Config+0x5c>)
@@ -673,7 +671,7 @@ int main(void)
   {
 
 
-	  // 20 us base time from TIM2
+	     // 20 us base time from TIM2
 	     if (__HAL_TIM_GET_FLAG(&htim2, TIM_FLAG_UPDATE) == SET) {
  80006d0:	4b30      	ldr	r3, [pc, #192]	@ (8000794 <main+0xec>)
  80006d2:	681b      	ldr	r3, [r3, #0]
@@ -693,8 +691,8 @@ int main(void)
  80006ee:	4a2a      	ldr	r2, [pc, #168]	@ (8000798 <main+0xf0>)
  80006f0:	6013      	str	r3, [r2, #0]
 	     }
-	        // Task 1
-  	        if((counter - lastTime_1) >= Settime_1) {
+	        // ให้ PA6 กระพิบทุกๆ 1.2 ms
+  	        if((counter - Time_1) >= Settime_1) {
  80006f2:	4b29      	ldr	r3, [pc, #164]	@ (8000798 <main+0xf0>)
  80006f4:	681a      	ldr	r2, [r3, #0]
  80006f6:	4b29      	ldr	r3, [pc, #164]	@ (800079c <main+0xf4>)
@@ -711,13 +709,13 @@ int main(void)
  8000708:	4a26      	ldr	r2, [pc, #152]	@ (80007a4 <main+0xfc>)
  800070a:	f083 0340 	eor.w	r3, r3, #64	@ 0x40
  800070e:	6153      	str	r3, [r2, #20]
-	        	for(uint32_t i=0; i<=60000; i++) {
+	        	for(uint32_t i=0; i<=60000; i++) { // รอเวลาให้กระพริบ
  8000710:	2300      	movs	r3, #0
  8000712:	607b      	str	r3, [r7, #4]
  8000714:	e003      	b.n	800071e <main+0x76>
 	        		__NOP();
  8000716:	bf00      	nop
-	        	for(uint32_t i=0; i<=60000; i++) {
+	        	for(uint32_t i=0; i<=60000; i++) { // รอเวลาให้กระพริบ
  8000718:	687b      	ldr	r3, [r7, #4]
  800071a:	3301      	adds	r3, #1
  800071c:	607b      	str	r3, [r7, #4]
@@ -726,15 +724,15 @@ int main(void)
  8000724:	4293      	cmp	r3, r2
  8000726:	d9f6      	bls.n	8000716 <main+0x6e>
 	        	}
-	            lastTime_1 = counter;
+	            Time_1 = counter; // update
  8000728:	4b1b      	ldr	r3, [pc, #108]	@ (8000798 <main+0xf0>)
  800072a:	681b      	ldr	r3, [r3, #0]
  800072c:	4a1b      	ldr	r2, [pc, #108]	@ (800079c <main+0xf4>)
  800072e:	6013      	str	r3, [r2, #0]
 		    }
 
-	        // Task 2
-	        if((counter - lastTime_2) >= Settime_2) {
+	        // อ่านค่า PA0 และเปลี่ยน state ใน LUT
+	        if((counter - Time_2) >= Settime_2) {
  8000730:	4b19      	ldr	r3, [pc, #100]	@ (8000798 <main+0xf0>)
  8000732:	681a      	ldr	r2, [r3, #0]
  8000734:	4b1c      	ldr	r3, [pc, #112]	@ (80007a8 <main+0x100>)
@@ -751,13 +749,13 @@ int main(void)
  8000748:	2b00      	cmp	r3, #0
  800074a:	d11d      	bne.n	8000788 <main+0xe0>
 	        		// On falling edge (button press)
-	        		GPIOA->ODR &= ~(0x0E);               // Clear PA1–PA3
+	        		GPIOA->ODR &= ~(0x0E);               // Clear ค่า PA1–PA3
  800074c:	4b15      	ldr	r3, [pc, #84]	@ (80007a4 <main+0xfc>)
  800074e:	695b      	ldr	r3, [r3, #20]
  8000750:	4a14      	ldr	r2, [pc, #80]	@ (80007a4 <main+0xfc>)
  8000752:	f023 030e 	bic.w	r3, r3, #14
  8000756:	6153      	str	r3, [r2, #20]
-	        		GPIOA->ODR |= (LUT[state] << 1);     // Update LED pattern
+	        		GPIOA->ODR |= (LUT[state] << 1);     // Update LED
  8000758:	4b12      	ldr	r3, [pc, #72]	@ (80007a4 <main+0xfc>)
  800075a:	695a      	ldr	r2, [r3, #20]
  800075c:	4b14      	ldr	r3, [pc, #80]	@ (80007b0 <main+0x108>)
@@ -778,7 +776,7 @@ int main(void)
  8000776:	4b0e      	ldr	r3, [pc, #56]	@ (80007b0 <main+0x108>)
  8000778:	701a      	strb	r2, [r3, #0]
 
-	        		if (state == 4){
+	        		if (state == 4){ // ถ้าเกิน state 3 reset ไป 0 ใหม่
  800077a:	4b0d      	ldr	r3, [pc, #52]	@ (80007b0 <main+0x108>)
  800077c:	781b      	ldrb	r3, [r3, #0]
  800077e:	2b04      	cmp	r3, #4
@@ -788,7 +786,7 @@ int main(void)
  8000784:	2200      	movs	r2, #0
  8000786:	701a      	strb	r2, [r3, #0]
 	        		     	             }
-	            lastTime_2 = counter;
+	            Time_2 = counter; // update
  8000788:	4b03      	ldr	r3, [pc, #12]	@ (8000798 <main+0xf0>)
  800078a:	681b      	ldr	r3, [r3, #0]
  800078c:	4a06      	ldr	r2, [pc, #24]	@ (80007a8 <main+0x100>)
