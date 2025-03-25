@@ -1,7 +1,12 @@
-# ENE331_2414_2423_2433
+# ENE331_Embedded System Laboratory
 
-## Our Concept
-โค้ดนี้เป็นโค้ดในการควบคุมการกระพริบของ LED และการอ่านค่าปุ่ม โดยแบ่งการทำงานเป็น 2 ส่วนหลัก:
+## Members
+1. 65070502414 Nutsata Dhanyalakvanich
+2. 65070502423 Teerawit Pongkunawut (Created)
+3. 65070502433 Pongpira Wanachompoo
+
+## Concept
+Project นี้เป็น code ในการควบคุมการกระพริบของ LED และการอ่านค่าปุ่ม โดยแบ่งการทำงานเป็น 2 ส่วนหลัก
 
 ### การกระพริบ LED ที่ PA6
 
