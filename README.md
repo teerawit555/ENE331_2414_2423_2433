@@ -5,6 +5,9 @@
 2. 65070502423 Teerawit Pongkunawut (Created)
 3. 65070502433 Pongpira Wanachompoo
 
+## Requirement
+![require](assets/diagram.png)
+
 ## Concept
 Project นี้เป็น code ในการควบคุมการกระพริบของ LED และการอ่านค่าปุ่ม โดยแบ่งการทำงานเป็น 2 ส่วนหลัก
 
@@ -26,11 +29,14 @@ Project นี้เป็น code ในการควบคุมการก
 
 
 ## รูปวงจร
-![Circuit](circuit.jpg)
+![Circuit](assets/circuit.jpg)
 
 ## LED
-![Circuit](LED1.jpg)
+![LED1](assets/LED1.jpg)
+
+## Oscilloscope
+![oscilloscope](assets/oscilloscope.jpg)
 
 ## วิธีการคำนวณ Prescaler Timer 
-![Circuit](formula.jpg)
+![formula](assets/formula.jpg)
 
