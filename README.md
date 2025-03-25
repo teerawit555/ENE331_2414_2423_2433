@@ -1,4 +1,4 @@
-# ENE331_Embedded System Laboratory
+# ENE331 Embedded System Laboratory
 
 ## Members
 1. 65070502414 Nutsata Dhanyalakvanich
